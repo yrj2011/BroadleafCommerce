@@ -4,7 +4,7 @@
 <div class="entity-form-actions">
     <div class="uploadFileFormContainer">
         
-        <blc:form method="post" class="uploadFileForm"
+        <form method="post" class="uploadFileForm"
             enctype="multipart/form-data"  
             th:action="@{${'/' + sectionKey + '/' + entityId + '/uploadAsset'}}">
             
@@ -16,7 +16,7 @@
             <div class="uploadMessage">
                 <i class="icon-spin icon-spinner"></i>
             </div>          
-        </blc:form>     
+        </form>     
         
     </div>
 </div>

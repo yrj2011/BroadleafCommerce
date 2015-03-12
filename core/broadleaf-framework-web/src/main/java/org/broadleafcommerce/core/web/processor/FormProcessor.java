@@ -54,7 +54,7 @@ public class FormProcessor extends AbstractElementProcessor {
     
     /**
      * We need this replacement to execute as early as possible to allow subsequent processors to act
-     * on this element as if it were a normal form instead of a blc:form
+     * on this element as if it were a normal form instead of a form
      */
     @Override
     public int getPrecedence() {
@@ -90,7 +90,7 @@ public class FormProcessor extends AbstractElementProcessor {
             }
         }
         
-        // Convert the <blc:form> node to a normal <form> node
+        // Convert the <form> node to a normal <form> node
         Element newElement = element.cloneElementNodeWithNewName(element.getParent(), "form", false);
         newElement.setRecomputeProcessorsImmediately(true);
         element.getParent().insertAfter(element, newElement);

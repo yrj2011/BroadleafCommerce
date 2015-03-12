@@ -8,7 +8,7 @@
 <!--    hideActions - boolean value determining whether or not to hide the entity form actions -->
 </comment>
 
-<blc:form th:object="${entityForm}"
+<form th:object="${entityForm}"
       method="POST"
       class="twelve columns custom entity-form"
       th:classappend="${(additionalClasses == null ? '' : additionalClasses + ' ') 
@@ -112,4 +112,4 @@
         <img th:src="@{/img/admin/ajax-loader.gif}" class="ajax-loader" />
     </div>
     
-</blc:form>
+</form>
