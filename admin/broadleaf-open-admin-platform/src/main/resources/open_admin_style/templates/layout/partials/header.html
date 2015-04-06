@@ -18,7 +18,10 @@
             </li>
 
             <li class="logout">
-                <a class="small button radius dark" th:href="@{/adminLogout.htm}" th:text="#{header.logout}" />
+                <form method="POST" th:action="@{/adminLogout.htm}" action="#">
+                    <input type="submit" class="small button radius dark" th:text="#{header.logout}"/>
+                </form>
+                <!-- <a class="small button radius dark" th:href="@{/adminLogout.htm}" th:text="#{header.logout}" /> -->
             </li>
         </ul>
     </div>
