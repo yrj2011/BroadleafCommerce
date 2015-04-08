@@ -6,7 +6,7 @@
         
         <form method="post" class="uploadFileForm"
             enctype="multipart/form-data"  
-            th:action="@{${'/' + sectionKey + '/' + entityId + '/uploadAsset'}}">
+            th:action="@{${'/' + sectionKey + '/' + entityId + '/uploadAsset' + '?' + _csrf.parameterName + '=' + _csrf.token}}">
             
             <input class="ajaxUploadFile" type="file" name="file" th:style="${isIE ? '' : 'display: none;'}" />
             <button class="right small dark radius button uploadButton" 

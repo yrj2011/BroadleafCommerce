@@ -1,6 +1,6 @@
 <form method="post" class="uploadFileForm entityListWithUpload hidden"
     enctype="multipart/form-data"  
-    th:action="@{${'/asset/uploadAsset'}}"
+    th:action="@{${'/asset/uploadAsset' + '?' + _csrf.parameterName + '=' + _csrf.token}}"
     id="assetUploadForm">
     
     <span style="display: block; margin-bottom: 5px; margin-left: 60px;"><i class="icon-camera"></i> Upload Asset</span>
