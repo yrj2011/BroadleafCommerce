@@ -221,7 +221,7 @@ var BLC = (function($) {
     }
         
     function getCsrfToken() {
-        var csrfTokenInput = $('input[name="csrfToken"]');
+        var csrfTokenInput = $('input[name="_csrf"]');
         if (csrfTokenInput.length == 0) {
             return null;
         }
