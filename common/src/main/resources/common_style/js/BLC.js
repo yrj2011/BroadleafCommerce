@@ -221,12 +221,24 @@ var BLC = (function($) {
     }
         
     function getCsrfToken() {
-        var csrfTokenInput = $('input[name="_csrf"]');
+        var csrfTokenInput = $('meta[name="_csrf"]');
         if (csrfTokenInput.length == 0) {
-            return null;
+            // we did not find the token in the meta data so we look for an input field
+            csrfTokenInput = $('input[name="_csrf"]');
+            if (csrfTokenInput.length == 0) {
+                // we did not find the new spring security token so we look for the old deprecated token
+                csrfTokenInput = $('input[name="csrfToken"]');
+                if (csrfTokenInput.length == 0) {
+                    // we did not find any tokens, so we return null
+                    return null;
+                }
+            }
+            // we return the value of the input field
+            return csrfTokenInput.val();
         }
         
-        return csrfTokenInput.val();
+        // we return the content of the meta-data
+        return csrfTokenInput.attr('content');
     }
     
     function defaultErrorHandler(data) {
