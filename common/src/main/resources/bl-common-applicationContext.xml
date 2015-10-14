@@ -384,5 +384,12 @@
                 <value>pageTemplate.*</value>
             </list>
         </property>
-    </bean>    
+    </bean>
+
+    <bean id="blConditionalDirectCopyTransformers" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+            </map>
+        </property>
+    </bean>
 </beans>
