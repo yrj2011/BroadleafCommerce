@@ -195,4 +195,17 @@ public interface ProductBundle extends Product, Serializable {
      */
     public boolean isOnSale();
 
+    /**
+     * Used to determine if the inventory of the bundle is independent of the inventory
+     * of its components.
+     * @return
+     */
+    Boolean getUseItemInventory();
+
+    /**
+     * Set whether the inventory of the bundle is independent of the inventory of its components
+     * @param useItemInventory
+     */
+    void setUseItemInventory(Boolean useItemInventory);
+
 }

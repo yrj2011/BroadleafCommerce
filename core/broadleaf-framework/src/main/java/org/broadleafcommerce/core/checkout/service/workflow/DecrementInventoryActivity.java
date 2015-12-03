@@ -19,6 +19,7 @@
  */
 package org.broadleafcommerce.core.checkout.service.workflow;
 
+import org.broadleafcommerce.core.catalog.domain.ProductBundle;
 import org.broadleafcommerce.core.catalog.domain.Sku;
 import org.broadleafcommerce.core.inventory.service.ContextualInventoryService;
 import org.broadleafcommerce.core.inventory.service.type.InventoryType;
@@ -28,6 +29,7 @@ import org.broadleafcommerce.core.order.domain.OrderItem;
 import org.broadleafcommerce.core.workflow.BaseActivity;
 import org.broadleafcommerce.core.workflow.ProcessContext;
 import org.broadleafcommerce.core.workflow.state.ActivityStateManagerImpl;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +46,10 @@ public class DecrementInventoryActivity extends BaseActivity<ProcessContext<Chec
 
     @Resource(name = "blInventoryService")
     protected ContextualInventoryService inventoryService;
-    
+
+    @Value("${defaultCheckBundleItemFlag:false}")
+    protected boolean defaultCheckBundleItemFlag;
+
     public DecrementInventoryActivity() {
         super();
         super.setAutomaticallyRegisterRollbackHandler(false);
@@ -76,20 +81,23 @@ public class DecrementInventoryActivity extends BaseActivity<ProcessContext<Chec
                     // add the bundle sku of quantities to decrement
                     skuInventoryMap.put(bundleItem.getSku(), bundleItem.getQuantity());
                 }
-                
-                // Now add all of the discrete items within the bundl
-                List<DiscreteOrderItem> discreteItems = bundleItem.getDiscreteOrderItems();
-                for (DiscreteOrderItem discreteItem : discreteItems) {
-                    if (InventoryType.CHECK_QUANTITY.equals(discreteItem.getSku().getInventoryType())) {
-                        Integer quantity = skuInventoryMap.get(discreteItem.getSku());
-                        if (quantity == null) {
-                            quantity = (discreteItem.getQuantity() * bundleItem.getQuantity());
-                        } else {
-                            quantity += (discreteItem.getQuantity() * bundleItem.getQuantity());
+
+                if(shouldCheckBundleItemInventory((BundleOrderItem)orderItem)){
+                    // Now add all of the discrete items within the bundl
+                    List<DiscreteOrderItem> discreteItems = bundleItem.getDiscreteOrderItems();
+                    for (DiscreteOrderItem discreteItem : discreteItems) {
+                        if (InventoryType.CHECK_QUANTITY.equals(discreteItem.getSku().getInventoryType())) {
+                            Integer quantity = skuInventoryMap.get(discreteItem.getSku());
+                            if (quantity == null) {
+                                quantity = (discreteItem.getQuantity() * bundleItem.getQuantity());
+                            } else {
+                                quantity += (discreteItem.getQuantity() * bundleItem.getQuantity());
+                            }
+                            skuInventoryMap.put(discreteItem.getSku(), quantity);
                         }
-                        skuInventoryMap.put(discreteItem.getSku(), quantity);
                     }
                 }
+
             }
         }
 
@@ -119,6 +127,20 @@ public class DecrementInventoryActivity extends BaseActivity<ProcessContext<Chec
         }
 
         return context;
+    }
+
+    /**
+     *
+     * @param orderItem
+     * @return whether or not the Inventory of the bundle's items.
+     */
+    protected boolean shouldCheckBundleItemInventory(BundleOrderItem orderItem) {
+        boolean result = defaultCheckBundleItemFlag;
+        ProductBundle productBundle = orderItem.getProductBundle();
+        if(productBundle.getUseItemInventory() != null){
+            result = productBundle.getUseItemInventory();
+        }
+        return result;
     }
 
 }

@@ -88,6 +88,11 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
     @BatchSize(size = 50)
     @AdminPresentationCollection(friendlyName = "skuBundleItemsTitle")
     protected List<SkuBundleItem> skuBundleItems = new ArrayList<SkuBundleItem>();
+
+    @Column(name = "USE_ITEM_INVENTORY")
+    @AdminPresentation(friendlyName = "useItemInventory",tooltip = "useItemInventory_help")
+    protected Boolean useItemInventory;
+
     
     @Override
     public boolean isOnSale() {
@@ -246,6 +251,16 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
 
         return BigDecimal.ZERO;
 
+    }
+
+    @Override
+    public Boolean getUseItemInventory() {
+        return useItemInventory;
+    }
+
+    @Override
+    public void setUseItemInventory(Boolean useItemInventory) {
+        this.useItemInventory = useItemInventory;
     }
 
     @Override

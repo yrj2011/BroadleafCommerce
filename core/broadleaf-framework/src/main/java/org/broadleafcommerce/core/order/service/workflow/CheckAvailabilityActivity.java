@@ -21,7 +21,11 @@ package org.broadleafcommerce.core.order.service.workflow;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.broadleafcommerce.core.catalog.domain.Product;
+import org.broadleafcommerce.core.catalog.domain.ProductBundle;
 import org.broadleafcommerce.core.catalog.domain.Sku;
+import org.broadleafcommerce.core.catalog.domain.SkuBundleItem;
+import org.broadleafcommerce.core.catalog.domain.SkuBundleItemImpl;
 import org.broadleafcommerce.core.catalog.service.CatalogService;
 import org.broadleafcommerce.core.inventory.service.ContextualInventoryService;
 import org.broadleafcommerce.core.inventory.service.InventoryUnavailableException;
@@ -33,8 +37,12 @@ import org.broadleafcommerce.core.order.service.OrderItemService;
 import org.broadleafcommerce.core.order.service.call.OrderItemRequestDTO;
 import org.broadleafcommerce.core.workflow.BaseActivity;
 import org.broadleafcommerce.core.workflow.ProcessContext;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -58,6 +66,9 @@ public class CheckAvailabilityActivity extends BaseActivity<ProcessContext<CartO
     
     @Resource(name = "blInventoryService")
     protected ContextualInventoryService inventoryService;
+
+    @Value("${defaultCheckBundleItemFlag:false}")
+    protected boolean defaultCheckBundleItemFlag;
     
     @Override
     public ProcessContext<CartOperationRequest> execute(ProcessContext<CartOperationRequest> context) throws Exception {
@@ -65,13 +76,18 @@ public class CheckAvailabilityActivity extends BaseActivity<ProcessContext<CartO
         
         Sku sku;
         Long orderItemId = request.getItemRequest().getOrderItemId();
+        OrderItem orderItem = null;
+        boolean isBundle = false;
+        ProductBundle productBundle = null;
         if (orderItemId != null) {
             // this must be an update request as there is an order item ID available
-            OrderItem orderItem = orderItemService.readOrderItemById(orderItemId);
+            orderItem = orderItemService.readOrderItemById(orderItemId);
             if (orderItem instanceof DiscreteOrderItem) {
                 sku = ((DiscreteOrderItem) orderItem).getSku();
             } else if (orderItem instanceof BundleOrderItem) {
                 sku = ((BundleOrderItem) orderItem).getSku();
+                productBundle = ((BundleOrderItem) orderItem).getProductBundle();
+                isBundle = true;
             } else {
                 LOG.warn("Could not check availability; did not recognize passed-in item " + orderItem.getClass().getName());
                 return context;
@@ -80,6 +96,11 @@ public class CheckAvailabilityActivity extends BaseActivity<ProcessContext<CartO
             // No order item, this must be a new item add request
             Long skuId = request.getItemRequest().getSkuId();
             sku = catalogService.findSkuById(skuId);
+            Product product = sku.getDefaultProduct();
+            if(product instanceof ProductBundle){
+                isBundle = true;
+                productBundle = (ProductBundle) product;
+            }
         }
         
         
@@ -88,22 +109,76 @@ public class CheckAvailabilityActivity extends BaseActivity<ProcessContext<CartO
             throw new InventoryUnavailableException("The referenced Sku " + sku.getId() + " is marked as unavailable",
                     sku.getId(), request.getItemRequest().getQuantity(), 0);
         }
-        
-        if (InventoryType.CHECK_QUANTITY.equals(sku.getInventoryType())) {
-            Integer requestedQuantity = request.getItemRequest().getQuantity();
-            
-            Map<String, Object> inventoryContext = new HashMap<String, Object>();
-            inventoryContext.put(ContextualInventoryService.ORDER_KEY, context.getSeedData().getOrder());
-            boolean available = inventoryService.isAvailable(sku, requestedQuantity, inventoryContext);
-            if (!available) {
-                throw new InventoryUnavailableException(sku.getId(),
-                        requestedQuantity, inventoryService.retrieveQuantityAvailable(sku, inventoryContext));
+
+        HashMap<Sku,Integer> bundleSkuQuantityMap = null;
+        List<Sku> orderItemSkuList = new LinkedList<>();
+        // If we are dealing with a bundle; we need to determine how the inventory quantity
+        // is done.
+        if(isBundle){
+            bundleSkuQuantityMap = new LinkedHashMap<>();
+            if(shouldCheckBundleItemInventory(productBundle)){
+                List<SkuBundleItem> skuBundleItems = productBundle.getSkuBundleItems();
+                for(SkuBundleItem skuBundleItem : skuBundleItems){
+                    Sku itemSku = skuBundleItem.getSku();
+                    orderItemSkuList.add(itemSku);
+                    if(bundleSkuQuantityMap.containsKey(sku)){
+                        Integer quantity = bundleSkuQuantityMap.get(sku);
+                        quantity = quantity + skuBundleItem.getQuantity();
+                        bundleSkuQuantityMap.put(sku,quantity);
+                    }else {
+                        bundleSkuQuantityMap.put(sku,skuBundleItem.getQuantity());
+                    }
+                }
+            } else {
+                // use the Quantity of ProductBundle's sku.
+                orderItemSkuList.add(sku);
+                // set the quantity to '1' because the sku IS the bundle
+                bundleSkuQuantityMap.put(sku,1);
+            }
+        } else {
+            orderItemSkuList.add(sku);
+        }
+
+        for(Sku orderItemSku : orderItemSkuList ){
+            if (InventoryType.CHECK_QUANTITY.equals(orderItemSku.getInventoryType())) {
+                Integer requestedQuantity = request.getItemRequest().getQuantity();
+                if(isBundle){
+                     /*
+                        It is possible that a bundle contains a quantity of 2+ for a SkuBundleItem.
+                        in that case we want to multiply the requested quantity bundle times the
+                        quantity of items it takes to make the bundle.
+                    */
+                    Integer bundleCompositionQuantity = bundleSkuQuantityMap.get(sku);
+                    requestedQuantity = requestedQuantity * bundleCompositionQuantity;
+                }
+
+                Map<String, Object> inventoryContext = new HashMap<String, Object>();
+                inventoryContext.put(ContextualInventoryService.ORDER_KEY, context.getSeedData().getOrder());
+                boolean available = inventoryService.isAvailable(orderItemSku, requestedQuantity, inventoryContext);
+                if (!available) {
+                    throw new InventoryUnavailableException(orderItemSku.getId(),
+                            requestedQuantity, inventoryService.retrieveQuantityAvailable(orderItemSku, inventoryContext));
+                }
             }
         }
+
         
         // the other case here is ALWAYS_AVAILABLE and null, which we are treating as being available
         
         return context;
     }
-    
+
+    /**
+     *
+     * @param productBundle
+     * @return whether or not the Inventory of the bundle's items.
+     */
+    protected boolean shouldCheckBundleItemInventory(ProductBundle productBundle) {
+        boolean result = defaultCheckBundleItemFlag;
+        if(productBundle.getUseItemInventory() != null){
+            result = productBundle.getUseItemInventory();
+        }
+        return result;
+    }
+
 }
