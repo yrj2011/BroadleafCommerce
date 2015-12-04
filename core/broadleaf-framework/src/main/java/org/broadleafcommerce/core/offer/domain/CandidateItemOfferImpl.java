@@ -29,6 +29,7 @@ import org.broadleafcommerce.core.order.domain.OrderItem;
 import org.broadleafcommerce.core.order.domain.OrderItemImpl;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.*;
+import org.hibernate.annotations.Index;
 import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;

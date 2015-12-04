@@ -49,6 +49,7 @@ import org.broadleafcommerce.core.offer.domain.OrderItemAdjustmentImpl;
 import org.broadleafcommerce.core.order.service.type.OrderItemType;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.*;
+import org.hibernate.annotations.Index;
 import org.hibernate.annotations.Parameter;
 
 import javax.persistence.CascadeType;
