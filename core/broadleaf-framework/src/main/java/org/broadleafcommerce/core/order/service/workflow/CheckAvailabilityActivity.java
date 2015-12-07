@@ -31,6 +31,7 @@ import org.broadleafcommerce.core.order.domain.DiscreteOrderItem;
 import org.broadleafcommerce.core.order.domain.OrderItem;
 import org.broadleafcommerce.core.order.service.OrderItemService;
 import org.broadleafcommerce.core.order.service.call.OrderItemRequestDTO;
+import org.broadleafcommerce.core.order.service.type.OrderStatus;
 import org.broadleafcommerce.core.workflow.BaseActivity;
 import org.broadleafcommerce.core.workflow.ProcessContext;
 
@@ -89,7 +90,7 @@ public class CheckAvailabilityActivity extends BaseActivity<ProcessContext<CartO
                     sku.getId(), request.getItemRequest().getQuantity(), 0);
         }
         
-        if (InventoryType.CHECK_QUANTITY.equals(sku.getInventoryType())) {
+        if (InventoryType.CHECK_QUANTITY.equals(sku.getInventoryType()) && (!OrderStatus.NAMED.equals(request.getOrder().getStatus()) && !OrderStatus.QUOTE.equals(request.getOrder().getStatus()))) {
             Integer requestedQuantity = request.getItemRequest().getQuantity();
             
             Map<String, Object> inventoryContext = new HashMap<String, Object>();
