@@ -420,18 +420,18 @@ public class SolrIndexServiceImpl implements SolrIndexService {
             
             extensionManager.getProxy().modifyBuiltDocuments(documents, indexables, fields, locales);
 
-            logDocuments(documents);
-
             if (!CollectionUtils.isEmpty(documents) && solrServer != null) {
                 solrServer.add(documents);
                 commit(solrServer);
+
+                logDocuments(documents);
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Built incremental product index - pageSize: [%s] in [%s]", indexables.size(), s.toLapString()));
+                }
             }
             TransactionUtils.finalizeTransaction(status, transactionManager, false);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("Built incremental product index - pageSize: [%s] in [%s]", indexables.size(), s.toLapString()));
-            }
-            
             return documents;
         } catch (SolrServerException e) {
             TransactionUtils.finalizeTransaction(status, transactionManager, true);
@@ -777,4 +777,29 @@ public class SolrIndexServiceImpl implements SolrIndexService {
 
         return displayOrder.multiply(BigDecimal.valueOf(1000000)).longValue();
     }
+
+    @Override
+    public void deleteByQuery(String deleteQuery) throws SolrServerException, IOException {
+        String docType = (useSku) ? FieldEntity.SKU.getType() : FieldEntity.PRODUCT.getType();
+        String childDeleteQuery = "{!child of=" + shs.getTypeFieldName() + ":" + docType + "} " + deleteQuery;
+        SolrContext.getServer().deleteByQuery(childDeleteQuery);
+        SolrContext.getServer().deleteByQuery(deleteQuery);
+
+        logDeleteQuery(childDeleteQuery);
+        logDeleteQuery(deleteQuery);
+    }
+
+    @Override
+    public void addDocuments(Collection<SolrInputDocument> documents) throws IOException, SolrServerException {
+        SolrContext.getServer().add(documents);
+        logDocuments(documents);
+    }
+
+    @Override
+    public void logDeleteQuery(String deleteQuery) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Delete query: " + deleteQuery);
+        }
+    }
+
 }
