@@ -19,13 +19,16 @@
  */
 package org.broadleafcommerce.openadmin.dto;
 
+import org.apache.commons.lang3.StringUtils;
 import org.broadleafcommerce.common.presentation.client.LookupType;
 import org.broadleafcommerce.common.presentation.client.SupportedFieldType;
 import org.broadleafcommerce.common.presentation.client.VisibilityEnum;
 import org.broadleafcommerce.openadmin.dto.visitor.MetadataVisitor;
 import org.broadleafcommerce.openadmin.server.service.persistence.validation.PropertyValidator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,8 +67,9 @@ public class BasicFieldMetadata extends FieldMetadata {
     protected Integer gridOrder;
     protected String columnWidth;
     protected String broadleafEnumeration;
+    protected String fieldComponentRenderer;
     protected Boolean readOnly;
-    protected Map<String, Map<String, String>> validationConfigurations = new HashMap<String, Map<String, String>>(5);
+    protected Map<String, List<Map<String, String>>> validationConfigurations = new HashMap<String, List<Map<String, String>>>(5);
     protected Boolean requiredOverride;
     protected String tooltip;
     protected String helpText;
@@ -281,6 +285,23 @@ public class BasicFieldMetadata extends FieldMetadata {
         this.broadleafEnumeration = broadleafEnumeration;
     }
 
+    /**
+     * Returns the component renderer for the field.  Defaults to the fieldType unless otherwise set.
+     * 
+     * @return String
+     */
+    public String getFieldComponentRenderer() {
+        if ((StringUtils.isEmpty(fieldComponentRenderer) || fieldComponentRenderer == SupportedFieldType.UNKNOWN.toString()) && fieldType != null) {
+            return fieldType.toString();
+        }
+        return fieldComponentRenderer;
+    }
+
+    
+    public void setFieldComponentRenderer(String fieldComponentRenderer) {
+        this.fieldComponentRenderer = fieldComponentRenderer;
+    }
+
     public Boolean getReadOnly() {
         return readOnly;
     }
@@ -309,11 +330,11 @@ public class BasicFieldMetadata extends FieldMetadata {
      * @return the validation configurations for this property keyed by the fully-qualified name of the
      * {@link PropertyValidator} implementation
      */
-    public Map<String, Map<String, String>> getValidationConfigurations() {
+    public Map<String, List<Map<String, String>>> getValidationConfigurations() {
         return validationConfigurations;
     }
 
-    public void setValidationConfigurations(Map<String, Map<String, String>> validationConfigurations) {
+    public void setValidationConfigurations(Map<String, List<Map<String, String>>> validationConfigurations) {
         this.validationConfigurations = validationConfigurations;
     }
 
@@ -570,17 +591,23 @@ public class BasicFieldMetadata extends FieldMetadata {
         metadata.gridOrder = gridOrder;        
         metadata.columnWidth = columnWidth;
         metadata.broadleafEnumeration = broadleafEnumeration;
+        metadata.fieldComponentRenderer = fieldComponentRenderer;
         metadata.readOnly = readOnly;
         metadata.requiredOverride = requiredOverride;
         metadata.tooltip = tooltip;
         metadata.helpText = helpText;
         metadata.hint = hint;
-        for (Map.Entry<String, Map<String, String>> entry : validationConfigurations.entrySet()) {
-            Map<String, String> clone = new HashMap<String, String>(entry.getValue().size());
-            for (Map.Entry<String, String> entry2 : entry.getValue().entrySet()) {
-                clone.put(entry2.getKey(), entry2.getValue());
+        for (Map.Entry<String, List<Map<String, String>>> entry : validationConfigurations.entrySet()) {
+            List<Map<String, String>> clonedConfigItems = new ArrayList<Map<String, String>>(entry.getValue().size());
+            
+            for (Map<String, String> configEntries : entry.getValue()) {
+                Map<String, String> clone = new HashMap<String, String>(configEntries.keySet().size());
+                for (Map.Entry<String, String> entry2 : configEntries.entrySet()) {
+                    clone.put(entry2.getKey(), entry2.getValue());
+                }
+                clonedConfigItems.add(clone);
             }
-            metadata.validationConfigurations.put(entry.getKey(), clone);
+            metadata.validationConfigurations.put(entry.getKey(), clonedConfigItems);
         }
         metadata.lookupDisplayProperty = lookupDisplayProperty;
         metadata.forcePopulateChildProperties = forcePopulateChildProperties;
@@ -639,6 +666,9 @@ public class BasicFieldMetadata extends FieldMetadata {
         BasicFieldMetadata metadata = (BasicFieldMetadata) o;
 
         if (broadleafEnumeration != null ? !broadleafEnumeration.equals(metadata.broadleafEnumeration) : metadata.broadleafEnumeration != null) {
+            return false;
+        }
+        if (fieldComponentRenderer != null ? !fieldComponentRenderer.equals(metadata.fieldComponentRenderer) : metadata.fieldComponentRenderer != null) {
             return false;
         }
         if (columnWidth != null ? !columnWidth.equals(metadata.columnWidth) : metadata.columnWidth != null) {
@@ -811,6 +841,7 @@ public class BasicFieldMetadata extends FieldMetadata {
         result = 31 * result + (gridOrder != null ? gridOrder.hashCode() : 0);
         result = 31 * result + (columnWidth != null ? columnWidth.hashCode() : 0);
         result = 31 * result + (broadleafEnumeration != null ? broadleafEnumeration.hashCode() : 0);
+        result = 31 * result + (fieldComponentRenderer != null ? fieldComponentRenderer.hashCode() : 0);
         result = 31 * result + (readOnly != null ? readOnly.hashCode() : 0);
         result = 31 * result + (validationConfigurations != null ? validationConfigurations.hashCode() : 0);
         result = 31 * result + (requiredOverride != null ? requiredOverride.hashCode() : 0);

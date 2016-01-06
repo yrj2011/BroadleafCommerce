@@ -17,26 +17,34 @@
  * limitations under the License.
  * #L%
  */
-package org.broadleafcommerce.core.search.service.solr;
+package org.broadleafcommerce.core.search.service.solr.index;
+
+import java.util.Date;
+import java.util.Map;
 
 /**
- * Responsible for reading and writing the status using one or more {@link org.broadleafcommerce.core.search.service.solr.SolrIndexStatusProvider}
- * instances. {@link #getSeedStatusInstance()} can be used to provide a custom {@link org.broadleafcommerce.core.search.service.solr.IndexStatusInfo}
- * implementation.
+ * General information about the current status of a (embedded) Solr instance's index
  *
  * @author Jeff Fischer
  */
-public interface SolrIndexStatusService {
-
-    void setIndexStatus(IndexStatusInfo status);
-
-    IndexStatusInfo getIndexStatus();
+public interface IndexStatusInfo {
 
     /**
-     * Provide a custom IndexStatusInfo instance to be used by the system.
+     * The most recent index date
      *
      * @return
      */
-    IndexStatusInfo getSeedStatusInstance();
+    Date getLastIndexDate();
+
+    void setLastIndexDate(Date lastIndexDate);
+
+    /**
+     * Arbitrary information about the index.
+     *
+     * @return
+     */
+    Map<String, String> getAdditionalInfo();
+
+    void setAdditionalInfo(Map<String, String> additionalInfo);
 
 }

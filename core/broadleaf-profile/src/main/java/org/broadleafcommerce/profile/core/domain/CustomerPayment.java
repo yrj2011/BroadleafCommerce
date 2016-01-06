@@ -20,12 +20,19 @@
 
 package org.broadleafcommerce.profile.core.domain;
 
+import org.broadleafcommerce.common.copy.MultiTenantCloneable;
+import org.broadleafcommerce.common.payment.PaymentGatewayType;
+import org.broadleafcommerce.common.payment.PaymentType;
+
 import java.io.Serializable;
 import java.util.Map;
 
-import org.broadleafcommerce.common.copy.MultiTenantCloneable;
-
-public interface CustomerPayment extends Serializable, AdditionalFields, MultiTenantCloneable<CustomerPayment> {
+/**
+ * <p>This entity is designed to deal with payments associated to an {@link Customer} and is used to refer to a saved 
+ * payment that is stored at the Payment Gateway level. This entity can be used to represent any type of payment, 
+ * such as credit cards, PayPal accounts, etc.</p>
+ */
+public interface CustomerPayment extends AdditionalFields, Serializable, MultiTenantCloneable<CustomerPayment> {
 
     public void setId(Long id);
 
@@ -43,12 +50,22 @@ public interface CustomerPayment extends Serializable, AdditionalFields, MultiTe
 
     public void setPaymentToken(String paymentToken);
 
+    public PaymentType getPaymentType();
+
+    public void setPaymentType(PaymentType paymentType);
+
+    public PaymentGatewayType getPaymentGatewayType();
+
+    public void setPaymentGatewayType(PaymentGatewayType paymentGatewayType);
+
     public boolean isDefault();
 
-    public void setDefault(boolean isDefault);
+    public void setIsDefault(boolean isDefault);
 
+    @Override
     public Map<String, String> getAdditionalFields();
 
+    @Override
     public void setAdditionalFields(Map<String, String> additionalFields);
 
 }

@@ -1,6 +1,6 @@
 /*
  * #%L
- * BroadleafCommerce Framework
+ * BroadleafCommerce Common Libraries
  * %%
  * Copyright (C) 2009 - 2015 Broadleaf Commerce
  * %%
@@ -17,37 +17,25 @@
  * limitations under the License.
  * #L%
  */
-package org.broadleafcommerce.core.search.service.solr;
+package org.broadleafcommerce.common.extensibility.jpa;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * @see org.broadleafcommerce.common.extensibility.jpa.AutoDDLCreateStatusTestBean
  * @author Jeff Fischer
  */
-public class IndexStatusInfoImpl implements IndexStatusInfo {
+public class AutoDDLCreateStatusTestBeanImpl implements AutoDDLCreateStatusTestBean {
 
-    private Date lastIndexDate;
-    private Map<String, String> additionalInfo = new HashMap<String, String>();
+    protected Map<String, Boolean> startedWithCreate = new HashMap<String, Boolean>();
 
-    @Override
-    public Date getLastIndexDate() {
-        return lastIndexDate;
+    public Boolean getStartedWithCreate(String pu) {
+        return startedWithCreate.get(pu);
     }
 
-    @Override
-    public void setLastIndexDate(Date lastIndexDate) {
-        this.lastIndexDate = lastIndexDate;
+    public void setStartedWithCreate(String pu, Boolean val) {
+        this.startedWithCreate.put(pu, val);
     }
 
-    @Override
-    public Map<String, String> getAdditionalInfo() {
-        return additionalInfo;
-    }
-
-    @Override
-    public void setAdditionalInfo(Map<String, String> additionalInfo) {
-        this.additionalInfo = additionalInfo;
-    }
 }

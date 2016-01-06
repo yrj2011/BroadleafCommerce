@@ -1,6 +1,6 @@
 /*
  * #%L
- * BroadleafCommerce Framework
+ * BroadleafCommerce Common Libraries
  * %%
  * Copyright (C) 2009 - 2015 Broadleaf Commerce
  * %%
@@ -17,34 +17,18 @@
  * limitations under the License.
  * #L%
  */
-package org.broadleafcommerce.core.search.service.solr;
-
-import java.util.Date;
-import java.util.Map;
+package org.broadleafcommerce.common.extensibility.jpa;
 
 /**
- * General information about the current status of a (embedded) Solr instance's index
+ * MBean registered in JMX to keep track of which persistence units are marked with auto.ddl 'create'. The scope of this MBean
+ * covers the current JVM, which may span more than a single application in the same container.
  *
  * @author Jeff Fischer
  */
-public interface IndexStatusInfo {
+public interface AutoDDLCreateStatusTestBean {
 
-    /**
-     * The most recent index date
-     *
-     * @return
-     */
-    Date getLastIndexDate();
+    Boolean getStartedWithCreate(String pu);
 
-    void setLastIndexDate(Date lastIndexDate);
-
-    /**
-     * Arbitrary information about the index.
-     *
-     * @return
-     */
-    Map<String, String> getAdditionalInfo();
-
-    void setAdditionalInfo(Map<String, String> additionalInfo);
+    void setStartedWithCreate(String pu, Boolean val);
 
 }

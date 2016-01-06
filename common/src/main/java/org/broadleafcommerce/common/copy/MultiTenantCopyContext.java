@@ -141,6 +141,7 @@ public class MultiTenantCopyContext {
         if (createResponse == null) {
             createResponse = handleStandardEntity(instance, context, instanceClass);
         }
+        tearDownContext(context);
         return createResponse;
     }
 
@@ -249,7 +250,6 @@ public class MultiTenantCopyContext {
                 response = performCopy(instance, instanceClass, originalId);
             }
         }
-        tearDownContext(context);
         createResponse = new CreateResponse<G>(response, alreadyPopulate);
         return createResponse;
     }
