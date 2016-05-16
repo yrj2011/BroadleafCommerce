@@ -23,18 +23,29 @@ import org.broadleafcommerce.common.copy.CreateResponse;
 import org.broadleafcommerce.common.copy.MultiTenantCopyContext;
 import org.broadleafcommerce.common.money.BankersRounding;
 import org.broadleafcommerce.common.money.Money;
-import org.broadleafcommerce.common.presentation.*;
+import org.broadleafcommerce.common.presentation.AdminPresentation;
+import org.broadleafcommerce.common.presentation.AdminPresentationClass;
+import org.broadleafcommerce.common.presentation.AdminPresentationCollection;
+import org.broadleafcommerce.common.presentation.PopulateToOneFieldsEnum;
+import org.broadleafcommerce.common.presentation.RequiredOverride;
 import org.broadleafcommerce.common.presentation.client.SupportedFieldType;
 import org.broadleafcommerce.core.catalog.service.type.ProductBundlePricingModelType;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
 
-import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -69,13 +80,14 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
 
     @Column(name = "BUNDLE_PRIORITY")
     @AdminPresentation(excluded = true, friendlyName = "productBundlePriority", group="productBundleGroup")
-    protected int priority=99;
+    protected Integer priority=99;
 
-    @OneToMany(mappedBy = "bundle", targetEntity = SkuBundleItemImpl.class, cascade = { CascadeType.ALL })
-    @Cascade(value = { org.hibernate.annotations.CascadeType.ALL, org.hibernate.annotations.CascadeType.DELETE_ORPHAN })
+    @OneToMany(mappedBy = "bundle", targetEntity = SkuBundleItemImpl.class, cascade = { CascadeType.ALL },orphanRemoval = true)
+    @OrderBy(value = "sequence")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "blProducts")
     @BatchSize(size = 50)
-    @AdminPresentationCollection(friendlyName = "skuBundleItemsTitle")
+    @AdminPresentationCollection(friendlyName = "skuBundleItemsTitle",
+            sortProperty="sequence")
     protected List<SkuBundleItem> skuBundleItems = new ArrayList<SkuBundleItem>();
     
     @Override
@@ -117,7 +129,7 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
 
     @Override
     public Money getBundleItemsRetailPrice() {
-        Money price = new Money(BigDecimal.ZERO);
+        Money price = Money.ZERO;
         for (SkuBundleItem item : getSkuBundleItems()) {
             price = price.add(item.getRetailPrice().multiply(item.getQuantity()));
         }
@@ -126,7 +138,7 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
 
     @Override
     public Money getBundleItemsSalePrice() {
-        Money price = new Money(BigDecimal.ZERO);
+        Money price = Money.ZERO;
         for (SkuBundleItem item : getSkuBundleItems()){
             if (item.getSalePrice() != null) {
                 price = price.add(item.getSalePrice().multiply(item.getQuantity()));
@@ -135,6 +147,14 @@ public class ProductBundleImpl extends ProductImpl implements ProductBundle {
             }
         }
         return price;
+    }
+    
+    @Override
+    public void clearDynamicPrices() {
+        super.clearDynamicPrices();
+        for (SkuBundleItem bundleItem : getSkuBundleItems()) {
+            bundleItem.clearDynamicPrices();
+        }
     }
 
     @Override

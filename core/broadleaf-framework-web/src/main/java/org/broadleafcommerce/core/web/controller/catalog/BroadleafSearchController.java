@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.broadleafcommerce.common.exception.ServiceException;
 import org.broadleafcommerce.common.security.service.ExploitProtectionService;
 import org.broadleafcommerce.common.util.UrlUtil;
+import org.broadleafcommerce.common.web.BroadleafRequestContext;
 import org.broadleafcommerce.core.catalog.domain.Product;
 import org.broadleafcommerce.core.catalog.domain.Sku;
 import org.broadleafcommerce.core.search.domain.SearchCriteria;
@@ -79,19 +80,7 @@ public class BroadleafSearchController extends AbstractCatalogController {
     protected static String ALL_SKUS_ATTRIBUTE_NAME = "blcAllDisplayedSkus";
 
     public String search(Model model, HttpServletRequest request, HttpServletResponse response,String query) throws ServletException, IOException, ServiceException {
-        try {
-            if (StringUtils.isNotEmpty(query)) {
-                query = StringUtils.trim(query);
-                query = exploitProtectionService.cleanString(query);
-            }
-        } catch (ServiceException e) {
-            query = null;
-        }
-        
-        if (query == null || query.length() == 0) {
-            return "redirect:/";
-        }
-        
+
         if (request.getParameterMap().containsKey("facetField")) {
             // If we receive a facetField parameter, we need to convert the field to the 
             // product search criteria expected format. This is used in multi-facet selection. We 
@@ -129,9 +118,14 @@ public class BroadleafSearchController extends AbstractCatalogController {
             }
 
             if (StringUtils.isNotEmpty(query)) {
-                List<SearchFacetDTO> availableFacets = getSearchService().getSearchFacets();
-                SearchCriteria searchCriteria = facetService.buildSearchCriteria(request, availableFacets);
-                SearchResult result = getSearchService().findSearchResultsByQuery(query, searchCriteria);
+                SearchCriteria searchCriteria = facetService.buildSearchCriteria(request);
+
+                if (StringUtils.isEmpty(searchCriteria.getQuery())) {
+                    // if our query is empty or null, we want to redirect.
+                    return "redirect:/";
+                }
+
+                SearchResult result = getSearchService().findSearchResults(searchCriteria);
                 
                 facetService.setActiveFacetResults(result.getFacets(), request);
                 
@@ -150,11 +144,23 @@ public class BroadleafSearchController extends AbstractCatalogController {
             }
             
         }
+
+        updateQueryRequestAttribute(query);
+
         return getSearchView();
     }
 
     public String getSearchView() {
         return searchView;
+    }
+
+    protected void updateQueryRequestAttribute(String query) {
+        if (StringUtils.isNotEmpty(query)) {
+            BroadleafRequestContext brc = BroadleafRequestContext.getBroadleafRequestContext();
+            if (brc != null && brc.getAdditionalProperties() != null) {
+                brc.getAdditionalProperties().put("blcSearchKeyword", query);
+            }
+        }
     }
 
     protected SearchService getSearchService() {

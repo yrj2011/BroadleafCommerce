@@ -41,6 +41,7 @@ import org.broadleafcommerce.common.presentation.AdminPresentationClass;
 import org.broadleafcommerce.common.presentation.AdminPresentationCollection;
 import org.broadleafcommerce.common.presentation.AdminPresentationMap;
 import org.broadleafcommerce.common.presentation.AdminPresentationToOneLookup;
+import org.broadleafcommerce.common.presentation.ConfigurationItem;
 import org.broadleafcommerce.common.presentation.PopulateToOneFieldsEnum;
 import org.broadleafcommerce.common.presentation.RequiredOverride;
 import org.broadleafcommerce.common.presentation.ValidationConfiguration;
@@ -54,6 +55,7 @@ import org.broadleafcommerce.common.util.DateUtil;
 import org.broadleafcommerce.common.vendor.service.type.ContainerShapeType;
 import org.broadleafcommerce.common.vendor.service.type.ContainerSizeType;
 import org.broadleafcommerce.common.web.Locatable;
+import org.broadleafcommerce.core.search.domain.FieldEntity;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -128,7 +130,15 @@ import javax.persistence.Transient;
         @AdminPresentationMergeOverride(name = "defaultSku.retailPrice", mergeEntries =
                 @AdminPresentationMergeEntry(propertyType = PropertyType.AdminPresentation.REQUIREDOVERRIDE, overrideValue = "REQUIRED")),
         @AdminPresentationMergeOverride(name = "defaultSku.name", mergeEntries =
-                @AdminPresentationMergeEntry(propertyType = PropertyType.AdminPresentation.REQUIREDOVERRIDE, overrideValue = "REQUIRED"))
+                @AdminPresentationMergeEntry(propertyType = PropertyType.AdminPresentation.REQUIREDOVERRIDE, overrideValue = "REQUIRED")),
+        @AdminPresentationMergeOverride(name = "defaultSku.activeEndDate", mergeEntries =
+                @AdminPresentationMergeEntry(propertyType = PropertyType.AdminPresentation.VALIDATIONCONFIGURATIONS, validationConfigurations = {
+                    @ValidationConfiguration(
+                        validationImplementation = "blAfterStartDateValidator",
+                        configurationItems = {
+                                @ConfigurationItem(itemName = "otherField", itemValue = "defaultSku.activeStartDate")
+                        })
+                }))
 })
 @AdminPresentationClass(populateToOneFields = PopulateToOneFieldsEnum.TRUE, friendlyName = "baseProduct")
 @SQLDelete(sql = "UPDATE BLC_PRODUCT SET ARCHIVED = 'Y' WHERE PRODUCT_ID = ?")
@@ -404,6 +414,11 @@ public class ProductImpl implements Product, Status, AdminMainEntity, Locatable,
     }
 
     @Override
+    public boolean hasRetailPrice() {
+        return getRetailPrice() != null;
+    }
+
+    @Override
     public Money getRetailPrice() {
         if (defaultSku == null) {
             return null;
@@ -415,6 +430,11 @@ public class ProductImpl implements Product, Status, AdminMainEntity, Locatable,
     @Override
     public Money getSalePrice() {
         return getRetailPrice();
+    }
+
+    @Override
+    public Money getMargin() {
+        return getDefaultSku().getMargin();
     }
 
     @Override
@@ -1064,6 +1084,11 @@ public class ProductImpl implements Product, Status, AdminMainEntity, Locatable,
     @Override
     public String getLocation() {
         return getUrl();
+    }
+    
+    @Override
+    public FieldEntity getFieldEntityType() {
+        return FieldEntity.PRODUCT;
     }
 
 }

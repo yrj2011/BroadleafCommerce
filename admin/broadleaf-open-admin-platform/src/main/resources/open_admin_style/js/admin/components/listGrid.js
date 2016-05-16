@@ -354,12 +354,33 @@ $(document).ready(function() {
      * The rowSelected handler for an adornedTargetWithForm list grid. Once the user selects an entity,
      * show the form with the additional maintained fields.
      */
-    $('body').on('listGrid-adorned_with_form-rowSelected', function(event, link, fields, currentUrl) {
+    $('body').on('listGrid-adorned_with_form-rowSelected', function (event, link, fields, currentUrl) {
         $(this).find('input#adornedTargetIdProperty').val(fields['id']);
         var $a = $('a#adornedModalTab2Link');
-        $a.removeClass('disabled');
-        $a.click();
-        $a.addClass('disabled');
+        BLC.ajax({
+            url: link + '/verify',
+            type: "POST"
+        }, function (data) {
+            var autoSubmit = false;
+            for (prop in data) {
+                if (data.hasOwnProperty(prop)) {
+                    var fixedKey = prop.replace(".", "__");
+                    var value = data[prop];
+                    if (prop == 'autoSubmit' && value == 'true') {
+                        autoSubmit = true;
+                    } else {
+                        var inputField = $('input[name="fields[\'' + fixedKey + '\'].value"]');
+                        inputField.val(value);
+                    }
+                }
+            }
+            $a.removeClass('disabled');
+            $a.click();
+            $a.addClass('disabled');
+            if (autoSubmit) {
+                BLCAdmin.currentModal().find('.submit-button').click();
+            }
+        });
     });
     
     /**
@@ -380,7 +401,7 @@ $(document).ready(function() {
             
             var displayValue = fields[displayValueProp];
             var $selectedRow = BLCAdmin.currentModal().find('tr[data-link="' + link + '"]');
-            var $displayField = $selectedRow.find('td[data-fieldname=' + displayValueProp + ']');
+            var $displayField = $selectedRow.find('td[data-fieldname=' + displayValueProp.split(".").join("\\.") + ']');
             if ($displayField.hasClass('derived')) {
                 displayValue = $.trim($displayField.text());
             }
@@ -631,6 +652,22 @@ $(document).ready(function() {
         
         // Don't follow the link; prevents page jumping
         return false;
+    });
+    
+    $('body').on('click', 'button.clear-asset-selector', function(event) {
+    	//Get the media container
+        var $container = $(this).closest('div.asset-selector-container');
+        var $this = $(this);
+        
+        //Set media value to null so that when the request is sent the entry in the map for primary is deleted
+        $container.find('input.mediaItem').val('null').trigger('change');
+        
+        //Set placeholder image and hide clear button since there's nothing to clear
+        var src = $container.find('img.placeholder').attr('src');
+        $container.find('img.thumbnail').attr('src', src);
+        $container.find('img.thumbnail').addClass('placeholder-image');
+        $this.hide();
+        
     });
     
     $('body').on('mouseover', 'td.row-action-selector', function(event) {

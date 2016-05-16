@@ -20,6 +20,30 @@
 
 package org.broadleafcommerce.profile.core.domain;
 
+import org.broadleafcommerce.common.copy.CreateResponse;
+import org.broadleafcommerce.common.copy.MultiTenantCopyContext;
+import org.broadleafcommerce.common.payment.PaymentAdditionalFieldType;
+import org.broadleafcommerce.common.payment.PaymentGatewayType;
+import org.broadleafcommerce.common.payment.PaymentType;
+import org.broadleafcommerce.common.presentation.AdminPresentation;
+import org.broadleafcommerce.common.presentation.AdminPresentationClass;
+import org.broadleafcommerce.common.presentation.AdminPresentationMap;
+import org.broadleafcommerce.common.presentation.PopulateToOneFieldsEnum;
+import org.broadleafcommerce.common.presentation.client.SupportedFieldType;
+import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeEntry;
+import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverride;
+import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverrides;
+import org.broadleafcommerce.common.presentation.override.PropertyType;
+import org.broadleafcommerce.common.time.domain.TemporalTimestampListener;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Index;
+import org.hibernate.annotations.MapKeyType;
+import org.hibernate.annotations.Parameter;
+import org.hibernate.annotations.Type;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,29 +64,11 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import org.broadleafcommerce.common.copy.CreateResponse;
-import org.broadleafcommerce.common.copy.MultiTenantCopyContext;
-import org.broadleafcommerce.common.presentation.AdminPresentation;
-import org.broadleafcommerce.common.presentation.AdminPresentationClass;
-import org.broadleafcommerce.common.presentation.AdminPresentationMap;
-import org.broadleafcommerce.common.presentation.PopulateToOneFieldsEnum;
-import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeEntry;
-import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverride;
-import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverrides;
-import org.broadleafcommerce.common.presentation.override.PropertyType;
-import org.broadleafcommerce.common.time.domain.TemporalTimestampListener;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.MapKeyType;
-import org.hibernate.annotations.Parameter;
-import org.hibernate.annotations.Type;
-
 @Entity
 @EntityListeners(value = { TemporalTimestampListener.class })
 @Inheritance(strategy = InheritanceType.JOINED)
 @Table(name = "BLC_CUSTOMER_PAYMENT", uniqueConstraints = @UniqueConstraint(name = "CSTMR_PAY_UNIQUE_CNSTRNT", columnNames = { "CUSTOMER_ID", "PAYMENT_TOKEN" }))
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "blOrderElements")
 @AdminPresentationMergeOverrides(
 {
         @AdminPresentationMergeOverride(name = "billingAddress.addressLine1", mergeEntries =
@@ -73,7 +79,7 @@ import org.hibernate.annotations.Type;
         })
 })
 @AdminPresentationClass(populateToOneFields = PopulateToOneFieldsEnum.TRUE)
-public class CustomerPaymentImpl implements CustomerPayment, AdditionalFields {
+public class CustomerPaymentImpl implements CustomerPayment {
 
     private static final long serialVersionUID = 1L;
 
@@ -107,6 +113,19 @@ public class CustomerPaymentImpl implements CustomerPayment, AdditionalFields {
             groupOrder = Presentation.Group.Order.PAYMENT)
     protected String paymentToken;
 
+    @Column(name = "PAYMENT_TYPE")
+    @Index(name="CUSTOMERPAYMENT_TYPE_INDEX", columnNames={"PAYMENT_TYPE"})
+    @AdminPresentation(friendlyName = "CustomerPaymentImpl_Payment_Type", prominent=true,
+            fieldType= SupportedFieldType.BROADLEAF_ENUMERATION,
+            broadleafEnumeration="org.broadleafcommerce.common.payment.PaymentType")
+    protected String paymentType;
+
+    @Column(name = "GATEWAY_TYPE")
+    @AdminPresentation(friendlyName = "CustomerPaymentImpl_Gateway_Type", prominent=true,
+            fieldType = SupportedFieldType.BROADLEAF_ENUMERATION,
+            broadleafEnumeration="org.broadleafcommerce.common.payment.PaymentGatewayType")
+    protected String paymentGatewayType;
+
     @Column(name = "IS_DEFAULT")
     @AdminPresentation(friendlyName = "CustomerPaymentImpl_isDefault",
             tab = Presentation.Tab.Name.PAYMENT,
@@ -115,7 +134,7 @@ public class CustomerPaymentImpl implements CustomerPayment, AdditionalFields {
             groupOrder = Presentation.Group.Order.PAYMENT)
     protected boolean isDefault = false;
 
-    @ElementCollection
+    @ElementCollection()
     @MapKeyType(@Type(type = "java.lang.String"))
     @Lob
     @Type(type = "org.hibernate.type.StringClobType")
@@ -172,12 +191,38 @@ public class CustomerPaymentImpl implements CustomerPayment, AdditionalFields {
     }
 
     @Override
+    public PaymentType getPaymentType() {
+        if (PaymentType.getInstance(paymentType) != null) {
+            return PaymentType.getInstance(paymentType);
+        }
+
+        //support legacy customer payments that may have stored the type on the additional fields map
+        return !additionalFields.containsKey(PaymentAdditionalFieldType.PAYMENT_TYPE.getType()) ? null :
+                PaymentType.getInstance(additionalFields.get(PaymentAdditionalFieldType.PAYMENT_TYPE.getType()));
+    }
+
+    @Override
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType == null ? null : paymentType.getType();
+    }
+
+    @Override
+    public PaymentGatewayType getPaymentGatewayType() {
+        return PaymentGatewayType.getInstance(paymentGatewayType);
+    }
+
+    @Override
+    public void setPaymentGatewayType(PaymentGatewayType paymentGatewayType) {
+        this.paymentGatewayType = paymentGatewayType == null ? null : paymentGatewayType.getType();
+    }
+
+    @Override
     public boolean isDefault() {
         return isDefault;
     }
 
     @Override
-    public void setDefault(boolean aDefault) {
+    public void setIsDefault(boolean aDefault) {
         this.isDefault = aDefault;
     }
 
@@ -201,7 +246,7 @@ public class CustomerPaymentImpl implements CustomerPayment, AdditionalFields {
         // dont clone
         cloned.setCustomer(customer);
         cloned.setBillingAddress(billingAddress.createOrRetrieveCopyInstance(context).getClone());
-        cloned.setDefault(isDefault);
+        cloned.setIsDefault(isDefault);
         cloned.setPaymentToken(paymentToken);
         for (Map.Entry<String, String> entry : additionalFields.entrySet()) {
             cloned.getAdditionalFields().put(entry.getKey(), entry.getValue());

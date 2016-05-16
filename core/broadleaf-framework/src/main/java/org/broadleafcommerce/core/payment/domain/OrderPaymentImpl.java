@@ -41,15 +41,19 @@ import org.broadleafcommerce.common.presentation.override.AdminPresentationMerge
 import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverride;
 import org.broadleafcommerce.common.presentation.override.AdminPresentationMergeOverrides;
 import org.broadleafcommerce.common.presentation.override.PropertyType;
+import org.broadleafcommerce.common.util.ApplicationContextHolder;
 import org.broadleafcommerce.core.order.domain.FulfillmentGroupImpl;
 import org.broadleafcommerce.core.order.domain.Order;
 import org.broadleafcommerce.core.order.domain.OrderImpl;
+import org.broadleafcommerce.core.payment.service.OrderPaymentStatusService;
+import org.broadleafcommerce.core.payment.service.type.OrderPaymentStatus;
 import org.broadleafcommerce.profile.core.domain.Address;
 import org.broadleafcommerce.profile.core.domain.AddressImpl;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Index;
 import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.SQLDelete;
+import org.springframework.context.ApplicationContext;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -157,7 +161,7 @@ public class OrderPaymentImpl implements OrderPayment, CurrencyCodeIdentifiable 
     @AdminPresentationCollection(friendlyName="OrderPaymentImpl_Details",
             tab = Presentation.Tab.Name.Log, tabOrder = Presentation.Tab.Order.Log)
     protected List<PaymentTransaction> transactions = new ArrayList<PaymentTransaction>();
-    
+
     @Embedded
     protected ArchiveStatus archiveStatus = new ArchiveStatus();
     
@@ -290,6 +294,17 @@ public class OrderPaymentImpl implements OrderPayment, CurrencyCodeIdentifiable 
     }
 
     @Override
+    public OrderPaymentStatus getStatus() {
+        ApplicationContext ctx = ApplicationContextHolder.getApplicationContext();
+        if (ctx == null) {
+            return null;
+        }
+
+        OrderPaymentStatusService svc = ctx.getBean("blOrderPaymentStatusService", OrderPaymentStatusService.class);
+        return svc.determineOrderPaymentStatus(this);
+    }
+
+    @Override
     public boolean isConfirmed() {
         for (PaymentTransaction tx : getTransactions()){
             if ((PaymentTransactionType.AUTHORIZE_AND_CAPTURE.equals(tx.getType()) ||
@@ -303,7 +318,7 @@ public class OrderPaymentImpl implements OrderPayment, CurrencyCodeIdentifiable 
 
     @Override
     public boolean isFinalPayment() {
-        return PaymentType.CREDIT_CARD.equals(getType()) || PaymentType.THIRD_PARTY_ACCOUNT.equals(getType());
+        return getType().getIsFinalPayment();
     }
 
     @Override

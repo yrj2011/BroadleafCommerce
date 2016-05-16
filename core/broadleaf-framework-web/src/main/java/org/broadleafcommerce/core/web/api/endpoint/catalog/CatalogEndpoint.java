@@ -17,6 +17,7 @@
  * limitations under the License.
  * #L%
  */
+
 package org.broadleafcommerce.core.web.api.endpoint.catalog;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -36,7 +37,6 @@ import org.broadleafcommerce.core.catalog.domain.SkuAttribute;
 import org.broadleafcommerce.core.catalog.service.CatalogService;
 import org.broadleafcommerce.core.inventory.service.InventoryService;
 import org.broadleafcommerce.core.search.domain.SearchCriteria;
-import org.broadleafcommerce.core.search.domain.SearchFacetDTO;
 import org.broadleafcommerce.core.search.domain.SearchResult;
 import org.broadleafcommerce.core.search.service.SearchService;
 import org.broadleafcommerce.core.web.api.BroadleafWebServicesException;
@@ -54,12 +54,10 @@ import org.broadleafcommerce.core.web.api.wrapper.SkuAttributeWrapper;
 import org.broadleafcommerce.core.web.api.wrapper.SkuWrapper;
 import org.broadleafcommerce.core.web.service.SearchFacetDTOService;
 import org.springframework.http.HttpStatus;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
@@ -87,7 +85,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public abstract class CatalogEndpoint extends BaseEndpoint {
 
-    @Resource(name="blCatalogService")
+    @Resource(name = "blCatalogService")
     protected CatalogService catalogService;
 
     @Resource(name = "blSearchService")
@@ -101,7 +99,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
 
     @Resource(name = "blStaticAssetPathService")
     protected StaticAssetPathService staticAssetPathService;
-    
+
     @Resource(name = "blInventoryService")
     protected InventoryService inventoryService;
 
@@ -162,8 +160,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
                     .addMessage(BroadleafWebServicesException.INVALID_CATEGORY_ID, categoryId);
         }
 
-        List<SearchFacetDTO> availableFacets = getSearchService().getSearchFacets();
-        SearchCriteria searchCriteria = facetService.buildSearchCriteria(request, availableFacets);
+        SearchCriteria searchCriteria = facetService.buildSearchCriteria(request);
         searchCriteria.setPageSize(pageSize);
         searchCriteria.setPage(page);
         try {
@@ -205,8 +202,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
                     .addMessage(BroadleafWebServicesException.SEARCH_QUERY_MALFORMED, q);
         }
 
-        List<SearchFacetDTO> availableFacets = getSearchService().getSearchFacets();
-        SearchCriteria searchCriteria = facetService.buildSearchCriteria(request, availableFacets);
+        SearchCriteria searchCriteria = facetService.buildSearchCriteria(request);
         searchCriteria.setPageSize(pageSize);
         searchCriteria.setPage(page);
         try {
@@ -237,7 +233,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             List<SkuWrapper> out = new ArrayList<SkuWrapper>();
             if (skus != null) {
                 for (Sku sku : skus) {
-                    SkuWrapper wrapper = (SkuWrapper)context.getBean(SkuWrapper.class.getName());
+                    SkuWrapper wrapper = (SkuWrapper) context.getBean(SkuWrapper.class.getName());
                     wrapper.wrapSummary(sku, request);
                     out.add(wrapper);
                 }
@@ -247,11 +243,11 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         throw BroadleafWebServicesException.build(HttpStatus.NOT_FOUND.value())
                 .addMessage(BroadleafWebServicesException.PRODUCT_NOT_FOUND, id);
     }
-    
+
     public SkuWrapper findDefaultSkuByProductId(HttpServletRequest request, Long id) {
         Product product = catalogService.findProductById(id);
         if (product != null && product.getDefaultSku() != null) {
-            SkuWrapper wrapper = (SkuWrapper)context.getBean(SkuWrapper.class.getName());
+            SkuWrapper wrapper = (SkuWrapper) context.getBean(SkuWrapper.class.getName());
             wrapper.wrapDetails(product.getDefaultSku(), request);
             return wrapper;
         }
@@ -269,7 +265,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         } else {
             categories = catalogService.findAllCategories(limit, offset);
         }
-        CategoriesWrapper wrapper = (CategoriesWrapper)context.getBean(CategoriesWrapper.class.getName());
+        CategoriesWrapper wrapper = (CategoriesWrapper) context.getBean(CategoriesWrapper.class.getName());
         wrapper.wrapDetails(categories, request);
         return wrapper;
     }
@@ -282,7 +278,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         Category category = catalogService.findCategoryById(id);
         if (category != null) {
             List<Category> categories;
-            CategoriesWrapper wrapper = (CategoriesWrapper)context.getBean(CategoriesWrapper.class.getName());
+            CategoriesWrapper wrapper = (CategoriesWrapper) context.getBean(CategoriesWrapper.class.getName());
             if (active) {
                 categories = catalogService.findActiveSubCategoriesByCategory(category, limit, offset);
             } else {
@@ -318,7 +314,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             request.setAttribute("subcategoryLimit", subcategoryLimit);
             request.setAttribute("subcategoryOffset", subcategoryOffset);
 
-            CategoryWrapper wrapper = (CategoryWrapper)context.getBean(CategoryWrapper.class.getName());
+            CategoryWrapper wrapper = (CategoryWrapper) context.getBean(CategoryWrapper.class.getName());
             wrapper.wrapDetails(cat, request);
             return wrapper;
         }
@@ -378,7 +374,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             ArrayList<CategoryAttributeWrapper> out = new ArrayList<CategoryAttributeWrapper>();
             if (category.getCategoryAttributes() != null) {
                 for (CategoryAttribute attribute : category.getCategoryAttributes()) {
-                    CategoryAttributeWrapper wrapper = (CategoryAttributeWrapper)context.getBean(CategoryAttributeWrapper.class.getName());
+                    CategoryAttributeWrapper wrapper = (CategoryAttributeWrapper) context.getBean(CategoryAttributeWrapper.class.getName());
                     wrapper.wrapSummary(attribute, request);
                     out.add(wrapper);
                 }
@@ -401,7 +397,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             List<RelatedProduct> relatedProds = product.getUpSaleProducts();
             if (relatedProds != null) {
                 for (RelatedProduct prod : relatedProds) {
-                    RelatedProductWrapper wrapper = (RelatedProductWrapper)context.getBean(RelatedProductWrapper.class.getName());
+                    RelatedProductWrapper wrapper = (RelatedProductWrapper) context.getBean(RelatedProductWrapper.class.getName());
                     wrapper.wrapSummary(prod, request);
                     out.add(wrapper);
                 }
@@ -424,7 +420,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             List<RelatedProduct> xSellProds = product.getCrossSaleProducts();
             if (xSellProds != null) {
                 for (RelatedProduct prod : xSellProds) {
-                    RelatedProductWrapper wrapper = (RelatedProductWrapper)context.getBean(RelatedProductWrapper.class.getName());
+                    RelatedProductWrapper wrapper = (RelatedProductWrapper) context.getBean(RelatedProductWrapper.class.getName());
                     wrapper.wrapSummary(prod, request);
                     out.add(wrapper);
                 }
@@ -434,7 +430,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         throw BroadleafWebServicesException.build(HttpStatus.NOT_FOUND.value())
                 .addMessage(BroadleafWebServicesException.PRODUCT_NOT_FOUND, id);
     }
-    
+
     public List<ProductAttributeWrapper> findProductAttributesForProduct(HttpServletRequest request,
             Long id) {
         Product product = catalogService.findProductById(id);
@@ -442,7 +438,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             ArrayList<ProductAttributeWrapper> out = new ArrayList<ProductAttributeWrapper>();
             if (product.getProductAttributes() != null) {
                 for (Map.Entry<String, ProductAttribute> entry : product.getProductAttributes().entrySet()) {
-                    ProductAttributeWrapper wrapper = (ProductAttributeWrapper)context.getBean(ProductAttributeWrapper.class.getName());
+                    ProductAttributeWrapper wrapper = (ProductAttributeWrapper) context.getBean(ProductAttributeWrapper.class.getName());
                     wrapper.wrapSummary(entry.getValue(), request);
                     out.add(wrapper);
                 }
@@ -460,7 +456,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             ArrayList<SkuAttributeWrapper> out = new ArrayList<SkuAttributeWrapper>();
             if (sku.getSkuAttributes() != null) {
                 for (Map.Entry<String, SkuAttribute> entry : sku.getSkuAttributes().entrySet()) {
-                    SkuAttributeWrapper wrapper = (SkuAttributeWrapper)context.getBean(SkuAttributeWrapper.class.getName());
+                    SkuAttributeWrapper wrapper = (SkuAttributeWrapper) context.getBean(SkuAttributeWrapper.class.getName());
                     wrapper.wrapSummary(entry.getValue(), request);
                     out.add(wrapper);
                 }
@@ -476,11 +472,11 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         Sku sku = catalogService.findSkuById(id);
         if (sku != null) {
             List<MediaWrapper> medias = new ArrayList<MediaWrapper>();
-            if (sku.getSkuMedia() != null && ! sku.getSkuMedia().isEmpty()) {
+            if (sku.getSkuMedia() != null && !sku.getSkuMedia().isEmpty()) {
                 for (Media media : sku.getSkuMedia().values()) {
-                    MediaWrapper wrapper = (MediaWrapper)context.getBean(MediaWrapper.class.getName());
+                    MediaWrapper wrapper = (MediaWrapper) context.getBean(MediaWrapper.class.getName());
                     wrapper.wrapSummary(media, request);
-                    if (wrapper.isAllowOverrideUrl()){
+                    if (wrapper.isAllowOverrideUrl()) {
                         wrapper.setUrl(staticAssetPathService.convertAssetPath(media.getUrl(), request.getContextPath(), request.isSecure()));
                     }
                     medias.add(wrapper);
@@ -496,21 +492,21 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             Long id) {
         Sku sku = catalogService.findSkuById(id);
         if (sku != null) {
-            SkuWrapper wrapper = (SkuWrapper)context.getBean(SkuWrapper.class.getName());
+            SkuWrapper wrapper = (SkuWrapper) context.getBean(SkuWrapper.class.getName());
             wrapper.wrapDetails(sku, request);
             return wrapper;
         }
         throw BroadleafWebServicesException.build(HttpStatus.NOT_FOUND.value())
                 .addMessage(BroadleafWebServicesException.SKU_NOT_FOUND, id);
     }
-    
+
     public List<InventoryWrapper> findInventoryForSkus(HttpServletRequest request, List<Long> ids) {
         List<Sku> skus = catalogService.findSkusByIds(ids);
         if (CollectionUtils.isNotEmpty(skus)) {
             Map<Sku, Integer> quantities = inventoryService.retrieveQuantitiesAvailable(new HashSet<Sku>(skus));
             List<InventoryWrapper> out = new ArrayList<InventoryWrapper>();
             for (Map.Entry<Sku, Integer> entry : quantities.entrySet()) {
-                InventoryWrapper wrapper = (InventoryWrapper)context.getBean(InventoryWrapper.class.getName());
+                InventoryWrapper wrapper = (InventoryWrapper) context.getBean(InventoryWrapper.class.getName());
                 wrapper.wrapSummary(entry.getKey(), entry.getValue(), request);
                 out.add(wrapper);
             }
@@ -528,9 +524,9 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             Map<String, Media> media = product.getMedia();
             if (media != null) {
                 for (Media med : media.values()) {
-                    MediaWrapper wrapper = (MediaWrapper)context.getBean(MediaWrapper.class.getName());
+                    MediaWrapper wrapper = (MediaWrapper) context.getBean(MediaWrapper.class.getName());
                     wrapper.wrapSummary(med, request);
-                    if (wrapper.isAllowOverrideUrl()){
+                    if (wrapper.isAllowOverrideUrl()) {
                         wrapper.setUrl(staticAssetPathService.convertAssetPath(med.getUrl(), request.getContextPath(), request.isSecure()));
                     }
                     out.add(wrapper);
@@ -549,7 +545,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             ArrayList<MediaWrapper> out = new ArrayList<MediaWrapper>();
             Map<String, Media> media = category.getCategoryMedia();
             for (Media med : media.values()) {
-                MediaWrapper wrapper = (MediaWrapper)context.getBean(MediaWrapper.class.getName());
+                MediaWrapper wrapper = (MediaWrapper) context.getBean(MediaWrapper.class.getName());
                 wrapper.wrapSummary(med, request);
                 out.add(wrapper);
             }
@@ -563,7 +559,7 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
             Long id) {
         Product product = catalogService.findProductById(id);
         if (product != null) {
-            CategoriesWrapper wrapper = (CategoriesWrapper)context.getBean(CategoriesWrapper.class.getName());
+            CategoriesWrapper wrapper = (CategoriesWrapper) context.getBean(CategoriesWrapper.class.getName());
             List<Category> categories = new ArrayList<Category>();
             for (CategoryProductXref categoryXref : product.getAllParentCategoryXrefs()) {
                 categories.add(categoryXref.getCategory());
@@ -579,4 +575,3 @@ public abstract class CatalogEndpoint extends BaseEndpoint {
         return searchService;
     }
 }
-
