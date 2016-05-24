@@ -177,13 +177,43 @@ public class ItemOfferProcessorImpl extends OrderOfferProcessorImpl implements I
         return false;
     }
 
+    /**
+     * This method checks to see if an Order meets the subtotal requirements of a given ItemOffer.  The Order qualifies if for each group of
+     * CandidateTargets, the subtotal less the calculated savings is greater than the minimum required subtotal.
+     *
+     * @param order
+     * @param itemOffer
+     * @return
+     */
     protected boolean orderMeetsSubtotalRequirements(PromotableOrder order, PromotableCandidateItemOffer itemOffer) {
-        if (itemOffer.getOffer().getOrderMinSubTotal() == null ||
-                itemOffer.getOffer().getOrderMinSubTotal().lessThanOrEqual(Money.ZERO) ||
-                itemOffer.getOffer().getOrderMinSubTotal().lessThanOrEqual(order.getOrder().getSubTotal())) {
+        Money orderMinSubtotal = itemOffer.getOffer().getOrderMinSubTotal();
+        if (!offerHasMinSubtotalRequirement(orderMinSubtotal)) {
             return true;
         }
+
+        for (List<PromotableOrderItem> promotableItems : itemOffer.getCandidateTargetsMap().values()) {
+            Money subtotal = getSubtotalAfterAdjustments(order, itemOffer, promotableItems);
+
+            if (subtotal.greaterThanOrEqual(orderMinSubtotal)) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    private boolean offerHasMinSubtotalRequirement(Money orderMinSubtotal) {
+        return orderMinSubtotal != null && orderMinSubtotal.greaterThan(Money.ZERO);
+    }
+
+    private Money getSubtotalAfterAdjustments(PromotableOrder order, PromotableCandidateItemOffer itemOffer, List<PromotableOrderItem> promotableItems) {
+        Money subtotal = order.getOrder().getSubTotal();
+        for (PromotableOrderItem item : promotableItems) {
+            int maxNumberOfUses = itemOffer.calculateMaximumNumberOfUses();
+            Money discountAmount = itemOffer.calculateSavingsForOrderItem(item, maxNumberOfUses);
+            subtotal = subtotal.subtract(discountAmount);
+        }
+        return subtotal;
     }
 
     protected boolean isTotalitarianOfferAppliedToAnyItem(PromotableOrder order) {
