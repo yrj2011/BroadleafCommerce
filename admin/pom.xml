@@ -4,7 +4,7 @@
     <parent>
         <artifactId>broadleaf</artifactId>
         <groupId>org.broadleafcommerce</groupId>
-        <version>client-BK-5.0.x-patch1</version>
+        <version><version>client-BK-5.0.1-GA-patch1</version></version>
     </parent>
     <artifactId>admin</artifactId>
     <packaging>pom</packaging>
